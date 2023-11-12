@@ -1,0 +1,18 @@
+<vector
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Outer circle with white fill -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M12,2C6.47,2 2,6.47 2,12s4.47,10 10,10 10,-4.47 10,-10S17.53,2 12,2z"/>
+
+    <!-- Inner circle with #1C5280 color fill -->
+    <path
+        android:fillColor="#1C5280"
+        android:pathData="M12,4C7.58,4 4,7.58 4,12s3.58,8 8,8 8,-3.58 8,-8s-3.58,-8 -8,-8z"/>
+
+</vector>
