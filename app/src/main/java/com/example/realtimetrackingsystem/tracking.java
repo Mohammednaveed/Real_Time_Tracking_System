@@ -254,10 +254,7 @@ public class tracking extends AppCompatActivity {
         Map<String, Object> sourceCoordinates = (Map<String, Object>) data.get("sourceCoordinates");
          sourceLatitude = ((Number) sourceCoordinates.get("latitude")).doubleValue();
          sourceLongitude = ((Number) sourceCoordinates.get("longitude")).doubleValue();
-        Point sourceLocation = Point.fromLngLat(sourceLongitude, sourceLatitude);
 
-        // Add a marker at the source location
-        soucepoint(sourceLocation);
         // Extract destinationCoordinates
         Map<String, Object> destinationCoordinates = (Map<String, Object>) data.get("destinationCoordinates");
          destLatitude = ((Number) destinationCoordinates.get("latitude")).doubleValue();
@@ -291,7 +288,10 @@ public class tracking extends AppCompatActivity {
         // Print sourceCoordinates
         Log.d(TAG, "Source Latitude: " + sourceLatitude);
         Log.d(TAG, "Source Longitude: " + sourceLongitude);
+        Point sourceLocation = Point.fromLngLat(sourceLongitude, sourceLatitude);
 
+        // Add a marker at the source location
+        soucepoint(sourceLocation);
         // Print destinationCoordinates
         Log.d(TAG, "Destination Latitude: " + destLatitude);
         Log.d(TAG, "Destination Longitude: " + destLongitude);
@@ -372,7 +372,7 @@ public class tracking extends AppCompatActivity {
                 .withDraggable(false);
 
         pointAnnotationManager.create(pointAnnotationOptions);
-        pointAnnotationManager.deleteAll();
+
     }
 
     private void destinationpoint(Point point)
