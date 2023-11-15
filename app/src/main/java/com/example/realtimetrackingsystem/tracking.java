@@ -84,6 +84,8 @@ public class tracking extends AppCompatActivity {
     private ImageView backicon;
     private FirebaseFirestore db;
     String driverNumber;
+    private PointAnnotationManager pointAnnotationManager;
+    private PointAnnotation pointAnnotation;
 
     double sourceLatitude;
     double sourceLongitude;
@@ -389,22 +391,31 @@ public class tracking extends AppCompatActivity {
         pointAnnotationManager.create(pointAnnotationOptions);
 
     }
-    private void realMarker(Point point)
-    {
+
+    private void realMarker(Point point) {
         Bitmap myLogo = ((BitmapDrawable)getResources().getDrawable(R.drawable.buslivelocation)).getBitmap();
         AnnotationPlugin annotationApi = AnnotationPluginImplKt.getAnnotations(mapView);
-        PointAnnotationManager pointAnnotationManager= PointAnnotationManagerKt.createPointAnnotationManager(annotationApi,new AnnotationConfig());
+
+        // Create PointAnnotationManager if not already created
+        if (pointAnnotationManager == null) {
+            pointAnnotationManager = PointAnnotationManagerKt.createPointAnnotationManager(annotationApi, new AnnotationConfig());
+        }
+
+        // Remove previous marker if exists
+        if (pointAnnotation != null) {
+            pointAnnotationManager.delete(pointAnnotation);
+        }
+
+        // Create new PointAnnotationOptions
         PointAnnotationOptions pointAnnotationOptions = new PointAnnotationOptions()
                 .withPoint(point)
                 .withIconImage(myLogo)
                 .withIconSize(1)
                 .withDraggable(false);
 
-        pointAnnotationManager.create(pointAnnotationOptions);
-
-
-
-        }
+        // Create or update the PointAnnotation
+        pointAnnotation = pointAnnotationManager.create(pointAnnotationOptions);
+    }
 
 
 }
