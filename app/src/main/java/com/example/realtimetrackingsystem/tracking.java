@@ -84,6 +84,7 @@ public class tracking extends AppCompatActivity {
     private ImageView backicon;
     private FirebaseFirestore db;
     String driverNumber;
+
     private PointAnnotationManager pointAnnotationManager;
     private PointAnnotation pointAnnotation;
 
@@ -229,6 +230,7 @@ public class tracking extends AppCompatActivity {
                     }
                 });
     }
+
 
     private boolean hasLoggedDetails = false;
 
