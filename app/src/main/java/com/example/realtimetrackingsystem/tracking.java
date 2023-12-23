@@ -263,7 +263,7 @@ public class tracking extends AppCompatActivity {
         Map<String, Object> destinationCoordinates = (Map<String, Object>) data.get("destinationCoordinates");
          destLatitude = ((Number) destinationCoordinates.get("latitude")).doubleValue();
          destLongitude = ((Number) destinationCoordinates.get("longitude")).doubleValue();
-        Point destinationLocation = Point.fromLngLat(destLatitude, destLongitude);
+        Point destinationLocation = Point.fromLngLat(destLongitude,destLatitude);
 
         // Add a marker at the source location
         destinationpoint(destinationLocation);
