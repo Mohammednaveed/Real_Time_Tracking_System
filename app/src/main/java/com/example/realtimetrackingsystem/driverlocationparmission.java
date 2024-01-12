@@ -35,13 +35,13 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.navigation.NavigationView;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class driverlocationparmission extends AppCompatActivity {
     private View underline;
@@ -54,7 +54,6 @@ public class driverlocationparmission extends AppCompatActivity {
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
     private FusedLocationProviderClient fusedLocationClient;
-    private DatabaseReference databaseRef;
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     private Handler locationUpdateHandler;
     private static final long LOCATION_UPDATE_INTERVAL = 5000; // 5 seconds
@@ -75,9 +74,6 @@ public class driverlocationparmission extends AppCompatActivity {
 
         // Restoring the previous state
         isLocationSharing = sharedPreferences.getBoolean(SHARED_PREF_KEY, false);
-
-        // Initialize Firebase Realtime Database reference
-//        databaseRef = FirebaseDatabase.getInstance().getReference("locations");
 
         // Initialize FusedLocationProviderClient
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -108,9 +104,6 @@ public class driverlocationparmission extends AppCompatActivity {
                         // If location sharing is not active, start sharing
                         serviceIntent.setAction(LocationSharingService.ACTION_START);
                         startService(serviceIntent);
-
-
-
 
                         rec_loc.setText("Stop Location Sharing "); // Change the TextView text to "Stop"
                     } else {
@@ -144,20 +137,22 @@ public class driverlocationparmission extends AppCompatActivity {
         // Handle navigation drawer item clicks
         NavigationView navigationView = findViewById(R.id.nav_view);
         autoSourceTextView = findViewById(R.id.sourceEditText);
-        db.collection("journeyDetails")
+        db.collection("Localbuses")
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
                             if (documentSnapshot.exists()) {
-                                String source = documentSnapshot.getString("source");
-                                if (source != null) {
+                                List<Map<String, Object>> stations = (List<Map<String, Object>>) documentSnapshot.get("Stations");
+
+                                if (stations != null && !stations.isEmpty()) {
+                                    String source = (String) stations.get(0).get("placeName");
                                     suggestions.add(source);
                                 }
                             }
                         }
-                        // After fetching data from all documents, set up the adapter
+
                         ArrayAdapter<String> adapter = new ArrayAdapter<>(driverlocationparmission.this, android.R.layout.simple_dropdown_item_1line, suggestions);
                         autoSourceTextView.setAdapter(adapter);
                     }
@@ -165,25 +160,27 @@ public class driverlocationparmission extends AppCompatActivity {
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        // Handle the error
                         Log.e(TAG, "Error fetching data from Firestore", e);
                     }
                 });
+
         autoDesTextView = findViewById(R.id.destinationEditText);
-        db.collection("journeyDetails")
+        db.collection("Localbuses")
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
                             if (documentSnapshot.exists()) {
-                                String source = documentSnapshot.getString("destination");
-                                if (source != null) {
-                                    suggestions.add(source);
+                                List<Map<String, Object>> stations = (List<Map<String, Object>>) documentSnapshot.get("Stations");
+
+                                if (stations != null && !stations.isEmpty()) {
+                                    String destination = (String) stations.get(stations.size() - 1).get("placeName");
+                                    suggestions.add(destination);
                                 }
                             }
                         }
-                        // After fetching data from all documents, set up the adapter
+
                         ArrayAdapter<String> adapter = new ArrayAdapter<>(driverlocationparmission.this, android.R.layout.simple_dropdown_item_1line, suggestions);
                         autoDesTextView.setAdapter(adapter);
                     }
@@ -191,29 +188,24 @@ public class driverlocationparmission extends AppCompatActivity {
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        // Handle the error
                         Log.e(TAG, "Error fetching data from Firestore", e);
                     }
                 });
-         searchButton = findViewById(R.id.searchButton);
+
+        searchButton = findViewById(R.id.searchButton);
         searchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String Source= autoSourceTextView.getText().toString();
+                String Source = autoSourceTextView.getText().toString();
                 String Destination = autoDesTextView.getText().toString();
-                if(TextUtils.isEmpty(Source) || TextUtils.isEmpty(Destination)){
+                if (TextUtils.isEmpty(Source) || TextUtils.isEmpty(Destination)) {
                     Toast.makeText(driverlocationparmission.this, "Enter the field properly", Toast.LENGTH_SHORT).show();
-
                 } else if (Source.equals(Destination)) {
-
-                    Toast.makeText(driverlocationparmission.this, "Both field should not be same ", Toast.LENGTH_SHORT).show();
-
-                }
-                else {
+                    Toast.makeText(driverlocationparmission.this, "Both fields should not be the same", Toast.LENGTH_SHORT).show();
+                } else {
                     Intent intent = new Intent(driverlocationparmission.this, search.class);
                     intent.putExtra("Source", Source);
                     intent.putExtra("Destination", Destination);
-
                     startActivity(intent);
                 }
             }
@@ -293,12 +285,8 @@ public class driverlocationparmission extends AppCompatActivity {
 
     private void requestLocationPermission() {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-            // Show an explanation if needed (e.g., first-time user)
-            // You can show a dialog or provide more context here
-            // Then, request the permission
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
         } else {
-            // Request the permission without explanation
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
@@ -308,7 +296,6 @@ public class driverlocationparmission extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted, start location updates
                 locationPermissionGranted = true;
                 if (isLocationSharing) {
                     startLocationUpdates();
@@ -321,70 +308,19 @@ public class driverlocationparmission extends AppCompatActivity {
 
     private void startLocationUpdates() {
         if (!locationPermissionGranted) {
-            return; // Do not start updates if permission is not granted
+            return;
         }
 
         locationUpdateHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-//                getLocationAndSendData();
-                // Schedule the next location update after the specified interval
                 locationUpdateHandler.postDelayed(this, LOCATION_UPDATE_INTERVAL);
             }
         }, LOCATION_UPDATE_INTERVAL);
     }
 
-//    private void getLocationAndSendData() {
-//        if (locationPermissionGranted && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-//            fusedLocationClient.getLastLocation()
-//                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-//                        @Override
-//                        public void onSuccess(Location location) {
-//                            if (location != null) {
-//                                // Get latitude and longitude
-//                                double latitude = location.getLatitude();
-//                                double longitude = location.getLongitude();
-//
-//                                // Create a unique key for the location entry
-//                                String locationKey = databaseRef.child("locations").push().getKey();
-//
-//                                // Get current device date and time as Date objects
-//                                Date currentDate = new Date();
-//
-//                                // Format device date and time as strings
-//                                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-//                                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
-//                                String deviceDate = dateFormat.format(currentDate);
-//                                String deviceTime = timeFormat.format(currentDate);
-//
-//                                // Build the location data
-//                                LocationData locationData = new LocationData(latitude, longitude);
-//                                locationData.setTimestamp(System.currentTimeMillis());
-//
-//                                // Set the formatted device date and time strings
-//                                locationData.setDeviceDate(deviceDate);
-//                                locationData.setDeviceTime(deviceTime);
-//
-//                                // Send location data to Firebase under the "locations" node with the unique key
-//                                databaseRef.child(locationKey).setValue(locationData);
-//
-//                                Toast.makeText(driverlocationparmission.this, "Location sent to server", Toast.LENGTH_SHORT).show();
-//                            }
-//                        }
-//                    });
-//        }
-//    }
-
-
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // Remove any pending callbacks from the handler to stop location updates
-        locationUpdateHandler.removeCallbacksAndMessages(null);
-    }
     private void moveUnderline(final View targetView) {
-        int startX = currentX; // Start from the current X position
+        int startX = currentX;
         int endX = targetView.getLeft() + (targetView.getWidth() / 2) - (underline.getWidth() / 2);
 
         ValueAnimator animator = ValueAnimator.ofInt(startX, endX);
@@ -393,7 +329,7 @@ public class driverlocationparmission extends AppCompatActivity {
             public void onAnimationUpdate(ValueAnimator animation) {
                 int value = (int) animation.getAnimatedValue();
                 underline.setTranslationX(value);
-                currentX = value; // Update the current X position
+                currentX = value;
             }
         });
 
@@ -401,4 +337,9 @@ public class driverlocationparmission extends AppCompatActivity {
         animator.start();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        locationUpdateHandler.removeCallbacksAndMessages(null);
+    }
 }

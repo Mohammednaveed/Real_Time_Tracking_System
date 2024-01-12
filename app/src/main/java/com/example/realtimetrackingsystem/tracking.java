@@ -49,6 +49,8 @@ import com.mapbox.maps.MapView;
 import com.mapbox.maps.MapboxMap;
 import com.mapbox.maps.Style;
 import com.mapbox.maps.ViewAnnotationOptions;
+import com.mapbox.maps.extension.style.layers.generated.LineLayer;
+import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource;
 import com.mapbox.maps.plugin.LocationPuck2D;
 import com.mapbox.maps.plugin.Plugin;
 import com.mapbox.maps.plugin.annotation.AnnotationConfig;
@@ -69,6 +71,7 @@ import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListen
 import com.mapbox.maps.viewannotation.ViewAnnotationManager;
 import com.mapbox.maps.viewannotation.ViewAnnotationOptionsKtxKt;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -89,6 +92,9 @@ public class tracking extends AppCompatActivity {
     private PointAnnotation pointAnnotation;
 
     double sourceLatitude;
+    double Intermediatelongitude;
+    double Intermediatelatitude;
+
     double sourceLongitude;
     double destLatitude ;
     double destLongitude;
@@ -151,6 +157,8 @@ public class tracking extends AppCompatActivity {
         Intent intent = getIntent();
         String BusNumber = intent.getStringExtra("busnumber");
         String BusName = intent.getStringExtra("busname");
+        String driverNumber = intent.getStringExtra("drivernumber");
+
         busNumberTextView.setText(BusNumber);
         busNameTextView.setText(BusName);
 
@@ -186,6 +194,8 @@ public class tracking extends AppCompatActivity {
                             floatingActionButton.hide();
                         }
                     });
+
+
                 }
 
             });
@@ -240,16 +250,18 @@ public class tracking extends AppCompatActivity {
             return;
         }
 
-        String busNumber = (String) data.get("busnumber");
+
         String source = (String) data.get("source");
         String destination = (String) data.get("destination");
-          driverNumber = (String) data.get("driverNumber");
+
+
 
         // Print only once
-        Log.d(TAG, "Bus Number: " + busNumber);
+
         Log.d(TAG, "Source: " + source);
         Log.d(TAG, "Destination: " + destination);
-        Log.d(TAG, "Driver Number: " + driverNumber);
+        Log.d(TAG, "Destination: " + driverNumber);
+
 
         // Set the flag to indicate that details have been logged
         hasLoggedDetails = true;
@@ -267,6 +279,9 @@ public class tracking extends AppCompatActivity {
 
         // Add a marker at the source location
         destinationpoint(destinationLocation);
+        List<Double> intermediateLongitudesList = new ArrayList<>();
+        List<Double> intermediateLatitudesList = new ArrayList<>();
+
         List<Map<String, Object>> intermediateStations = (List<Map<String, Object>>) data.get("intermediateStations");
 
         if (intermediateStations != null) {
@@ -282,10 +297,15 @@ public class tracking extends AppCompatActivity {
                 Log.d(TAG, "Intermediate Station " + i + " Latitude: " + latitude);
                 Log.d(TAG, "Intermediate Station " + i + " Longitude: " + longitude);
                 Log.d(TAG, "Intermediate Station " + i + " Name: " + name);
+                Intermediatelongitude=longitude;
+                Intermediatelatitude=latitude;
                 Point intermediateLocation = Point.fromLngLat(longitude, latitude);
 
                 // Add a marker at the source location
                 AddMarker(intermediateLocation);
+                // Add coordinates to the lists
+                intermediateLongitudesList.add(longitude);
+                intermediateLatitudesList.add(latitude);
             }
         }
 
@@ -301,6 +321,16 @@ public class tracking extends AppCompatActivity {
         Log.d(TAG, "Destination Longitude: " + destLongitude);
 
         setupRealTimeLocation(driverNumber);
+
+
+
+        String geoJson = GeoJsonGenerator.generateGeoJson(sourceLongitude, sourceLatitude,
+                destLongitude, destLatitude, intermediateLongitudesList, intermediateLatitudesList);
+
+
+
+        // Log GeoJSON (for debugging)
+        Log.d(TAG, "Generated GeoJSON: " + geoJson);
     }
 
     private void setupRealTimeLocation(String driverNumber) {

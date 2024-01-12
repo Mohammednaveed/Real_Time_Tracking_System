@@ -16,12 +16,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
 
 public class search extends AppCompatActivity {
     private TextView sourceTextView, destinationTextView;
@@ -50,8 +49,6 @@ public class search extends AppCompatActivity {
         backicon = findViewById(R.id.back_icon);
 
         autoCompleteTextView = findViewById(R.id.autoCompleteTextView);
-
-
 
         autoCompleteTextView.setOnClickListener(view -> {
             // Create a custom dialog
@@ -108,46 +105,42 @@ public class search extends AppCompatActivity {
         backicon.setOnClickListener(view -> finish());
 
         // Find the bus numbers based on source and destination
-        CollectionReference journeyCollection = db.collection("journeyDetails");
-        Query journeyQuery = journeyCollection
-                .whereEqualTo("source", receivedSource)
-                .whereEqualTo("destination", receivedDestination);
 
-        journeyQuery.get().addOnSuccessListener(journeyQueryDocumentSnapshots -> {
-            List<String> busNumbers = new ArrayList<>();
-            for (QueryDocumentSnapshot journeyDocument : journeyQueryDocumentSnapshots) {
-                String busNumber = journeyDocument.getString("busnumber");
-                busNumbers.add(busNumber);
-            }
+        CollectionReference localBusesCollection = db.collection("Localbuses");
 
-            // Fetch bus details based on the found bus numbers
-            fetchBusDetails(db.collection("busDetails"), adapter, busNumbers);
-        });
+        localBusesCollection.get().addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Bus> busList = new ArrayList<>();
+
+                    for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+                        if (documentSnapshot.exists()) {
+                            List<Map<String, Object>> stations = (List<Map<String, Object>>) documentSnapshot.get("Stations");
+
+                            if (stations != null && !stations.isEmpty()) {
+                                String source = (String) stations.get(0).get("placeName");
+                                String destination = (String) stations.get(stations.size() - 1).get("placeName");
+
+                                // Check if source and destination match the received values
+                                if (receivedSource.equals(source) && receivedDestination.equals(destination)) {
+                                    Bus bus = documentSnapshot.toObject(Bus.class);
+                                    busList.add(bus);
+                                }
+                            }
+                        }
+                    }
+
+                    // Set the bus details in the adapter
+                    adapter.setBusList(busList);
+                })
+                .addOnFailureListener(e -> {
+                    // Handle failures
+                });
+
+
+
     }
+
 
     private void setRadioState(RadioButton radioButton, boolean checked) {
         radioButton.setChecked(checked);
-    }
-
-    private void fetchBusDetails(CollectionReference busCollection, BusAdapter adapter, List<String> busNumbers) {
-        List<Bus> busList = new ArrayList<>();
-        AtomicInteger queryCounter = new AtomicInteger(0);
-
-        for (String busNumber : busNumbers) {
-            Query busQuery = busCollection.whereEqualTo("busnumber", busNumber);
-
-            busQuery.get().addOnSuccessListener(busQueryDocumentSnapshots -> {
-                for (QueryDocumentSnapshot busDocument : busQueryDocumentSnapshots) {
-                    Bus bus = busDocument.toObject(Bus.class);
-                    busList.add(bus);
-                }
-
-                queryCounter.incrementAndGet();
-
-                if (queryCounter.get() == busNumbers.size()) {
-                    adapter.setBusList(busList);
-                }
-            });
-        }
     }
 }

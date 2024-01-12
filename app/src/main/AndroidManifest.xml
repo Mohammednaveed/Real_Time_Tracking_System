@@ -10,11 +10,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
-
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
@@ -28,31 +25,30 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FinalBusTraking"
         tools:targetApi="31">
+        <activity
+            android:name=".ggg"
+            android:exported="false" />
 
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />
 
         <activity
-            android:name="com.example.realtimetrackingsystem.search"
+            android:name=".search"
             android:exported="false" />
         <activity
-            android:name="com.example.realtimetrackingsystem.tracking"
-            android:label="Tracking Activity"/>
+            android:name=".tracking"
+            android:label="Tracking Activity" />
+
         <service
-            android:name="com.example.realtimetrackingsystem.LocationSharingService"
+            android:name=".LocationSharingService"
             android:enabled="true"
             android:exported="true"
             android:foregroundServiceType="location">
-
-
             <intent-filter>
                 <action android:name="android.location.LocTopLocationSharingService" />
             </intent-filter>
-
-
         </service>
-
         <!--
              TODO: Before you run your application, you need a Google Maps API key.
 
@@ -64,29 +60,27 @@
              project's local.properties file (e.g. MAPS_API_KEY=Aiza...), and replace the
              "YOUR_API_KEY" string in this file with "${MAPS_API_KEY}".
         -->
-        <!--        <meta-data-->
-        <!--            android:name="com.google.android.geo.API_KEY"-->
-        <!--            android:value="@string/google_maps_key" />-->
-
+        <!-- <meta-data -->
+        <!-- android:name="com.google.android.geo.API_KEY" -->
+        <!-- android:value="@string/google_maps_key" /> -->
         <activity
-            android:name="com.example.realtimetrackingsystem.MapsActivity"
+            android:name=".MapsActivity"
             android:exported="false"
             android:label="@string/title_activity_maps" />
-
         <activity
-            android:name="com.example.realtimetrackingsystem.driverlocationparmission"
+            android:name=".driverlocationparmission"
             android:exported="false" />
         <activity
-            android:name="com.example.realtimetrackingsystem.SignUpActivity"
+            android:name=".SignUpActivity"
             android:exported="false" />
         <activity
-            android:name="com.example.realtimetrackingsystem.forgotpass"
+            android:name=".forgotpass"
             android:exported="false" />
         <activity
-            android:name="com.example.realtimetrackingsystem.home"
+            android:name=".home"
             android:exported="false" />
         <activity
-            android:name="com.example.realtimetrackingsystem.login"
+            android:name=".login"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

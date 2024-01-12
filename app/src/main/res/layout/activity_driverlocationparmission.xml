@@ -141,7 +141,7 @@
                     android:layout_marginEnd="10dp"
                     android:layout_marginBottom="10dp"
                     android:gravity="center"
-                    android:text="SPOT"
+                    android:text="LOCAL/COLLEGE BUS"
                     android:textColor="#ffffff"
                     android:textSize="18sp" />
 
@@ -154,7 +154,7 @@
                     android:layout_marginTop="90dp"
                     android:layout_marginBottom="10dp"
                     android:gravity="center"
-                    android:text="BUS STATION"
+                    android:text="PUBLIC BUS"
                     android:textColor="#ffffff"
                     android:textSize="18sp" />
 

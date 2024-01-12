@@ -61,26 +61,23 @@ public class BusAdapter extends RecyclerView.Adapter<BusAdapter.BusViewHolder> {
         public void bind(Bus bus) {
             busNumberTextView.setText(bus.getbusnumber());
             startTimeTextView.setText(bus.getStartTime());
-            endTimeTextView.setText(bus.getendTime());
+            endTimeTextView.setText(bus.getEndTime());
             busNameTextView.setText(bus.getbusName());
             myRelativeLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     // Start the tracking activity and pass the bus number
-                    Intent intent = new Intent(context,tracking.class);
+                    Intent intent = new Intent(context, tracking.class);
                     intent.putExtra("busnumber", bus.getbusnumber());
                     intent.putExtra("busname", bus.getbusName());
-                    intent.putExtra("starttime",bus.getStartTime());
-                    intent.putExtra("endtime",bus.getendTime());
-                    intent.putExtra("source",bus.getsource());
-                    intent.putExtra("destination",bus.getdestination());
-
+                    intent.putExtra("starttime", bus.getStartTime());
+                    intent.putExtra("endtime", bus.getEndTime());
+                    intent.putExtra("source", bus.getsource());
+                    intent.putExtra("destination", bus.getdestination());
+                    intent.putExtra("drivernumber", bus.getDriverNumber());
 
 
                     context.startActivity(intent);
-
-
-
                 }
             });
         }
