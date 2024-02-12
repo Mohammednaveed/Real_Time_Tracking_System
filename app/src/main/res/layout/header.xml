@@ -7,18 +7,26 @@
     android:background="@drawable/bg"
     android:gravity="bottom">
     <TextView
+        android:id="@+id/appname"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Bus Tracking System "
+        android:text="Track N Go"
         android:textColor="#fff"
         android:textSize="30dp"
         android:textStyle="bold"/>
     <TextView
+        android:id="@+id/username"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="utkarsh25062001@gmail.com"
-
+        android:text="Hello User"
         android:textColor="#fff"
-        android:textSize="18dp"
+        android:textSize="20dp"
+        android:textStyle="bold"/>
+    <TextView
+        android:id="@+id/usermail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#fff"
+        android:textSize="15dp"
         />
 </LinearLayout>

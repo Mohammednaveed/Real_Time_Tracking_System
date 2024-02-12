@@ -62,11 +62,8 @@ public class LocationSharingService  extends Service {
         notificationHandler = new Handler();
         startNotificationChecker();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-//        Intent intent = getIntent();
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "LocationTrackingService:WakeLock");
-
-        // Start the WakeLock when the service starts
         wakeLock.acquire();
         locationCallback = new LocationCallback() {
             @Override
@@ -74,7 +71,6 @@ public class LocationSharingService  extends Service {
                 if (locationResult == null) {
                     return;
                 }
-
                 Location location = locationResult.getLastLocation();
                 if (location != null) {
                     if (isLocationSharing) {
@@ -91,24 +87,21 @@ public class LocationSharingService  extends Service {
         if (intent != null && intent.getAction() != null) {
             if (intent.getAction().equals(ACTION_START)) {
                 isLocationSharing = true;
-                 driverNumber = SharedPreferencesHelper.getDriverNumber(this);
+                driverNumber = SharedPreferencesHelper.getDriverNumber(this);
 
-                createNotificationChannel(); // Create the notification channel
+                createNotificationChannel();
                 if (!isNotificationPermissionGranted()) {
-                    // If permission is not granted, request it
                     requestNotificationPermission();
                 } else {
-                    startForeground(NOTIFICATION_ID, createNotification()); // Start the service as a foreground service
+                    startForeground(NOTIFICATION_ID, createNotification());
                     requestLocationUpdates();
                 }
             } else if (intent.getAction().equals(ACTION_STOP)) {
                 isLocationSharing = false;
                 stopLocationUpdates();
-                stopForeground(true); // Stop the service as a foreground service
-
+                stopForeground(true);
             }
         }
-
 
         return START_STICKY;
     }

@@ -93,39 +93,49 @@ public class driverlocationparmission extends AppCompatActivity {
         } else {
             rec_loc.setText("Start Location Sharing");
         }
+        String usertype = SharedPreferencesHelper.getUserType(driverlocationparmission.this);
+        if(usertype=="user") {
+            rec_loc.setVisibility(View.GONE);
+            Intent serviceIntent = new Intent(driverlocationparmission.this, LocationSharingService.class);
+            serviceIntent.setAction(LocationSharingService.ACTION_STOP);
+            stopService(serviceIntent);
+            serviceIntent.setAction("STOP_LOCATION_SHARING"); // Add this action
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancel(1);
+            rec_loc.setText("Start Location Sharing ");
+        }
+        if(usertype=="driver"){
+            rec_loc.setVisibility(View.VISIBLE);
+            Intent serviceIntent = new Intent(driverlocationparmission.this, LocationSharingService.class);
+            serviceIntent.setAction(LocationSharingService.ACTION_STOP);
+            stopService(serviceIntent);
+            serviceIntent.setAction("STOP_LOCATION_SHARING"); // Add this action
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancel(1);
+            rec_loc.setText("Start Location Sharing ");
+        }
+        Log.d(TAG, "UserType " + usertype);
         rec_loc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 if (locationPermissionGranted) {
                     Intent serviceIntent = new Intent(driverlocationparmission.this, LocationSharingService.class);
-
                     if (!isLocationSharing) {
-                        // If location sharing is not active, start sharing
                         serviceIntent.setAction(LocationSharingService.ACTION_START);
                         startService(serviceIntent);
-
-                        rec_loc.setText("Stop Location Sharing "); // Change the TextView text to "Stop"
+                        rec_loc.setText("Stop Location Sharing");
                     } else {
-                        // If location sharing is active, stop sharing
                         serviceIntent.setAction(LocationSharingService.ACTION_STOP);
                         stopService(serviceIntent);
-
-                        serviceIntent.setAction("STOP_LOCATION_SHARING"); // Add this action
-
-                        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                        notificationManager.cancel(1);
-                        rec_loc.setText("Start Location Sharing "); // Change the TextView text to "Start"
+                        rec_loc.setText("Start Location Sharing");
                     }
-                    isLocationSharing = !isLocationSharing; // Toggle the location sharing state
+                    isLocationSharing = !isLocationSharing;
                     sharedPreferences.edit().putBoolean(SHARED_PREF_KEY, isLocationSharing).apply();
-
                 } else {
                     requestLocationPermission();
                 }
             }
         });
-
         // Initialize your views and variables here
         drawerLayout = findViewById(R.id.drawer_layout);
         menuIcon = findViewById(R.id.menu_icon);
@@ -133,9 +143,15 @@ public class driverlocationparmission extends AppCompatActivity {
         textView1 = findViewById(R.id.spot_btn);
         textView2 = findViewById(R.id.bus_stop_btn);
         textView3 = findViewById(R.id.pass_btn);
-
         // Handle navigation drawer item clicks
         NavigationView navigationView = findViewById(R.id.nav_view);
+        View headerView = navigationView.getHeaderView(0); // Get the header view
+        TextView usernametextview = headerView.findViewById(R.id.username);
+        String username = SharedPreferencesHelper.getUserName(driverlocationparmission.this);
+        usernametextview.setText(username);
+        TextView usermailtextview = headerView.findViewById(R.id.usermail);
+        String usermail = SharedPreferencesHelper.getEmailId(driverlocationparmission.this);
+        usermailtextview.setText(usermail);
         autoSourceTextView = findViewById(R.id.sourceEditText);
         db.collection("Localbuses")
                 .get()
@@ -216,10 +232,19 @@ public class driverlocationparmission extends AppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 int itemId = item.getItemId();
                 if (itemId == R.id.logout) {
+
                     // Show a confirmation dialog before logging out
                     AlertDialog.Builder builder = new AlertDialog.Builder(driverlocationparmission.this);
                     builder.setTitle("Logout");
                     builder.setMessage("Are you sure you want to logout?");
+//                    isLocationSharing = false;
+                    Intent serviceIntent = new Intent(driverlocationparmission.this, LocationSharingService.class);
+                    serviceIntent.setAction(LocationSharingService.ACTION_STOP);
+                    stopService(serviceIntent);
+                    serviceIntent.setAction("STOP_LOCATION_SHARING"); // Add this action
+                    NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    notificationManager.cancel(1);
+                    rec_loc.setText("Start Location Sharing ");
                     builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {

@@ -25,12 +25,6 @@ import java.util.Map;
 public class SignUpActivity extends AppCompatActivity {
     private FirebaseFirestore db;
 
-
-
-
-        // Initialize Firestore
-
-
     private EditText emailEditText, passEditText, phoneEditText, fname;
     private Button signup;
     private boolean passwordVisible = false; // Flag to track password visibility
@@ -68,8 +62,6 @@ public class SignUpActivity extends AppCompatActivity {
                 String namef=fname.getText().toString();
                 String email = emailEditText.getText().toString();
                 String pass = passEditText.getText().toString();
-
-
                 String phone=phoneEditText.getText().toString();
                 //String comfnewpass = phoneEditText.getText().toString();
                 if (TextUtils.isEmpty(namef) || TextUtils.isEmpty(email) || TextUtils.isEmpty(pass) || TextUtils.isEmpty(phone) ) {
@@ -79,7 +71,6 @@ public class SignUpActivity extends AppCompatActivity {
                 }
             }
         });
-
         loginTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

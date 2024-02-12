@@ -32,7 +32,7 @@ public class Bus {
     }
     public String getbusName() {
         return busname;
-    }   public String getDriverNumber() {
+    }   public String getDriverNumber(String number) {
         return driverMobileNumber;
     }
     public List<Map<String, Object>> getStations() {

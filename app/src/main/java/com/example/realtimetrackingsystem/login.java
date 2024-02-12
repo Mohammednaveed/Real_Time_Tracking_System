@@ -1,9 +1,14 @@
 package com.example.realtimetrackingsystem;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Shader;
 import android.os.Bundle;
+import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.method.PasswordTransformationMethod;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
@@ -17,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -25,8 +31,10 @@ public class login extends AppCompatActivity {
     private EditText emailEditText1, passEditText1;
     private MaterialButton login1;
     private ProgressBar progressBar;
+    private static final String TAG = "login";
     private boolean passwordVisible = false;
     String email1;
+    String driverNumber;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,26 +42,39 @@ public class login extends AppCompatActivity {
 
         TextView forgot = findViewById(R.id.forgot_pass);
         TextView signUpTextView = findViewById(R.id.sign_up_text_view);
+        TextView track =findViewById(R.id.track);
+
         login1 = findViewById(R.id.login_btn);
         emailEditText1 = findViewById(R.id.log_email);
         passEditText1 = findViewById(R.id.log_pass);
         progressBar = findViewById(R.id.progressBar);
+        TextPaint paint = track.getPaint();
+        float width = paint.measureText(track.getText().toString());
 
+
+// Create a LinearGradient for text color
+        Shader textShader = new LinearGradient(
+                0, 0, width, track.getTextSize(),
+                new int[]{
+                        Color.parseColor("#BC7B33"),
+                        Color.parseColor("#E0903C"),
+                        Color.parseColor("#323131"),
+                        Color.parseColor("#0A0909")
+                },
+                null,
+                Shader.TileMode.CLAMP);
+
+        track.getPaint().setShader(textShader);
         if (SharedPreferencesHelper.isLoggedIn(this)) {
-            // User is already logged in, redirect to the appropriate activity
-            String userType = SharedPreferencesHelper.getUserType(this);
-            launchAppropriateActivity(userType);
+            driverNumber = SharedPreferencesHelper.getDriverNumber(this);
+            launchAppropriateActivity(driverNumber);
             finish();
         }
-
         login1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-
                 String email1 = emailEditText1.getText().toString();
                 String pass1 = passEditText1.getText().toString();
-
                 if (TextUtils.isEmpty(email1) || TextUtils.isEmpty(pass1)) {
                     Toast.makeText(login.this, "Enter all the fields properly", Toast.LENGTH_SHORT).show();
                 } else {
@@ -123,22 +144,27 @@ public class login extends AppCompatActivity {
         userRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+
                 if (task.isSuccessful()) {
                     DocumentSnapshot document = task.getResult();
                     if (document.exists()) {
                         String storedPassword = document.getString("password");
                         if (pass1.equals(storedPassword)) {
                             String userType = document.getString("usertype");
-                            String driverNumber = document.getString("phone");
+                            String userName = document.getString("Name");
+                            SharedPreferencesHelper.setUserName(login.this,userName);
+                            String usermail = document.getString("email");
+                            Log.d(TAG, "useremail: " + usermail);
+                            SharedPreferencesHelper.setEmailId(login.this,usermail);
+                            driverNumber = document.getString("phone");
                             SharedPreferencesHelper.setDriverNumber(login.this, driverNumber);
-
                             Intent locationServiceIntent = new Intent(login.this, LocationSharingService.class);
                             locationServiceIntent.setAction(LocationSharingService.ACTION_START);
                             locationServiceIntent.putExtra("driverNumber", driverNumber); // Pass the driverNumber
                             startService(locationServiceIntent);
                             SharedPreferencesHelper.setLoggedIn(login.this, true);
-                            SharedPreferencesHelper.setUserType(login.this, userType);
-                            launchAppropriateActivity(userType);
+//                            SharedPreferencesHelper.setUserType(login.this, userType);
+                            launchAppropriateActivity(driverNumber);
                         } else {
                             handleLoginFailure();
                         }
@@ -151,27 +177,36 @@ public class login extends AppCompatActivity {
             }
         });
     }
+private void launchAppropriateActivity(String userPhoneNumber) {
+    // Assuming you have a reference to your Firestore database
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    private void launchAppropriateActivity(String userType) {
+    CollectionReference phoneNumberCollection = db.collection("phonenumbers");
 
-
-
-        Intent intent;
-
-        if ("driver".equals(userType)) {
-
-            intent = new Intent(login.this, driverlocationparmission.class);
-        } else if ("regular".equals(userType)) {
-
-            intent = new Intent(login.this, home.class);
-        } else {
-            Toast.makeText(login.this, "Invalid user type.", Toast.LENGTH_SHORT).show();
-            hideProgressBar();
-            return;
-        }
-        startActivity(intent);
-        finish();
-    }
+    phoneNumberCollection.document(userPhoneNumber).get()
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        // Driver's phone number found, launch driver activity
+                        SharedPreferencesHelper.setUserType(login.this,"driver");
+                        Intent intent = new Intent(login.this, driverlocationparmission.class);
+                        startActivity(intent);
+                        finish();
+                    } else {
+                        // Regular user, launch home activity
+                        SharedPreferencesHelper.setUserType(login.this,"user");
+                        Intent intent = new Intent(login.this, driverlocationparmission.class);
+                        startActivity(intent);
+                        finish();
+                    }
+                } else {
+                    // Error handling
+                    Toast.makeText(login.this, "Error fetching user data.", Toast.LENGTH_SHORT).show();
+                    hideProgressBar();
+                }
+            });
+}
 
     private void handleLoginFailure() {
         Toast.makeText(login.this, "Login Failed: Incorrect credentials", Toast.LENGTH_SHORT).show();

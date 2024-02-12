@@ -65,6 +65,13 @@ public class home extends AppCompatActivity {
         textView2 = findViewById(R.id.bus_stop_btn);
         textView3 = findViewById(R.id.pass_btn);
         NavigationView navigationView = findViewById(R.id.nav_view);
+        View headerView = navigationView.getHeaderView(0); // Get the header view
+        TextView usernametextview = headerView.findViewById(R.id.username);
+        String username = SharedPreferencesHelper.getUserName(home.this);
+        usernametextview.setText(username);
+        TextView usermailtextview = headerView.findViewById(R.id.usermail);
+        String usermail = SharedPreferencesHelper.getEmailId(home.this);
+        usermailtextview.setText(usermail);
         autoSourceTextView = findViewById(R.id.sourceEditText);
 
         db.collection("Localbuses")

@@ -121,8 +121,11 @@ public class search extends AppCompatActivity {
 
                                 // Check if source and destination match the received values
                                 if (receivedSource.equals(source) && receivedDestination.equals(destination)) {
+                                    String driverNumber = (String) documentSnapshot.get("driverNumber");
+
                                     Bus bus = documentSnapshot.toObject(Bus.class);
                                     busList.add(bus);
+
                                 }
                             }
                         }

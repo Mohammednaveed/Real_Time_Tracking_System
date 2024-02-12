@@ -42,6 +42,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.mapbox.android.gestures.MoveGestureDetector;
 import com.mapbox.geojson.Point;
 import com.mapbox.maps.CameraOptions;
@@ -86,18 +87,14 @@ public class tracking extends AppCompatActivity {
     private TextView busNameTextView;
     private ImageView backicon;
     private FirebaseFirestore db;
-    String driverNumber;
+    private static final String TAG = "tracking";
+private  String driverMobileNumber;
 
     private PointAnnotationManager pointAnnotationManager;
     private PointAnnotation pointAnnotation;
 
-    double sourceLatitude;
-    double Intermediatelongitude;
-    double Intermediatelatitude;
 
-    double sourceLongitude;
-    double destLatitude ;
-    double destLongitude;
+
     private final ActivityResultLauncher<String> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback<Boolean>() {
         @Override
 
@@ -135,7 +132,7 @@ public class tracking extends AppCompatActivity {
 
         @Override
         public boolean onMove(@NonNull MoveGestureDetector moveGestureDetector) {
-            return false;
+            return true;
         }
 
         @Override
@@ -149,15 +146,14 @@ public class tracking extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tracking);
         mapView = findViewById(R.id.mapView);
-        busNumberTextView=findViewById(R.id.busnumber);
-        busNameTextView=findViewById(R.id.busname);
+        busNumberTextView = findViewById(R.id.busnumber);
+        busNameTextView = findViewById(R.id.busname);
         backicon = findViewById(R.id.back_icon);
         db = FirebaseFirestore.getInstance();
 
         Intent intent = getIntent();
         String BusNumber = intent.getStringExtra("busnumber");
         String BusName = intent.getStringExtra("busname");
-        String driverNumber = intent.getStringExtra("drivernumber");
 
         busNumberTextView.setText(BusNumber);
         busNameTextView.setText(BusName);
@@ -177,7 +173,6 @@ public class tracking extends AppCompatActivity {
                     mapView.getMapboxMap().setCamera(new CameraOptions.Builder().zoom(7.0).build());
 
 
-
                     LocationComponentPlugin locationComponentPlugin = getLocationComponent(mapView);
                     locationComponentPlugin.setEnabled(true);
                     LocationPuck2D locationPuck2D = new LocationPuck2D();
@@ -190,149 +185,115 @@ public class tracking extends AppCompatActivity {
                     floatingActionButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                           getGestures(mapView).addOnMoveListener(OnMoveListener);
+                            getGestures(mapView).addOnMoveListener(OnMoveListener);
                             floatingActionButton.hide();
                         }
                     });
-
-
                 }
-
             });
         }
         setupRealTimeJourneyDetails(BusNumber);
+
     }
+
     @Override
     protected void onStart() {
         super.onStart();
         // Start listening for real-time location updates
-        if (driverNumber != null) {
-            setupRealTimeLocation(driverNumber);
+// Start listening for real-time location updates
+        if (driverMobileNumber != null) {
+            setupRealTimeLocation(driverMobileNumber);
         }
     }
+
     protected void onStop() {
         super.onStop();
         // Stop listening for real-time location updates
         removeLocationUpdateListener();
     }
+
+
+
     private void removeLocationUpdateListener() {
         // Remove the ValueEventListener to stop listening for updates
         if (locationUpdateListener != null) {
             DatabaseReference locationsRef = FirebaseDatabase.getInstance().getReference("locations");
-            locationsRef.child(driverNumber).removeEventListener(locationUpdateListener);
+            locationsRef.child(driverMobileNumber).removeEventListener(locationUpdateListener);
         }
     }
-    private void setupRealTimeJourneyDetails(String busNumber) {
-        db.collection("journeyDetails")
-                .whereEqualTo("busnumber", busNumber)
+
+
+    private boolean hasLoggedDetails = false;
+    private void setupRealTimeJourneyDetails(String busnumber) {
+        db.collection("Localbuses")
+                .whereEqualTo("busNumber", busnumber)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
                         // Handle error
                         return;
                     }
-                    if (value != null) {
-                        for (DocumentChange dc : value.getDocumentChanges()) {
-                            if (dc.getType() == DocumentChange.Type.ADDED || dc.getType() == DocumentChange.Type.MODIFIED) {
-                                Map<String, Object> data = dc.getDocument().getData();
-                                processJourneyDetails(data);
-                            }
+                    if (value != null && !value.isEmpty()) {
+                        // Assuming there is only one document with the specified bus number
+                        Map<String, Object> data = value.getDocuments().get(0).getData();
+                        if (data != null) {
+                            processJourneyDetailsWithCoordinates(data);
                         }
                     }
                 });
     }
+    private void processJourneyDetailsWithCoordinates(Map<String, Object> data) {
+        // Extract other details as needed
+        String busNumber = (String) data.get("busNumber");
+         driverMobileNumber = (String) data.get("driverMobileNumber");
+        setupRealTimeLocation(driverMobileNumber);
 
-
-    private boolean hasLoggedDetails = false;
-
-    private void processJourneyDetails(Map<String, Object> data) {
-        // Check if details have already been logged
-        if (hasLoggedDetails) {
-            return;
-        }
-
-
-        String source = (String) data.get("source");
-        String destination = (String) data.get("destination");
-
-
-
-        // Print only once
-
-        Log.d(TAG, "Source: " + source);
-        Log.d(TAG, "Destination: " + destination);
-        Log.d(TAG, "Destination: " + driverNumber);
-
-
-        // Set the flag to indicate that details have been logged
-        hasLoggedDetails = true;
-
-        // Extract sourceCoordinates
-        Map<String, Object> sourceCoordinates = (Map<String, Object>) data.get("sourceCoordinates");
-         sourceLatitude = ((Number) sourceCoordinates.get("latitude")).doubleValue();
-         sourceLongitude = ((Number) sourceCoordinates.get("longitude")).doubleValue();
-
-        // Extract destinationCoordinates
-        Map<String, Object> destinationCoordinates = (Map<String, Object>) data.get("destinationCoordinates");
-         destLatitude = ((Number) destinationCoordinates.get("latitude")).doubleValue();
-         destLongitude = ((Number) destinationCoordinates.get("longitude")).doubleValue();
-        Point destinationLocation = Point.fromLngLat(destLongitude,destLatitude);
-
-        // Add a marker at the source location
-        destinationpoint(destinationLocation);
-        List<Double> intermediateLongitudesList = new ArrayList<>();
-        List<Double> intermediateLatitudesList = new ArrayList<>();
-
-        List<Map<String, Object>> intermediateStations = (List<Map<String, Object>>) data.get("intermediateStations");
-
-        if (intermediateStations != null) {
-            for (int i = 0; i < intermediateStations.size(); i++) {
-                Map<String, Object> station = intermediateStations.get(i);
-                Map<String, Object> coordinates = (Map<String, Object>) station.get("coordinates");
-                double latitude = ((Number) coordinates.get("latitude")).doubleValue();
-                double longitude = ((Number) coordinates.get("longitude")).doubleValue();
-                String name = (String) station.get("name");
-
-                // Now you can use latitude, longitude, and name as needed
-                // For example, you can print them or perform other actions
-                Log.d(TAG, "Intermediate Station " + i + " Latitude: " + latitude);
-                Log.d(TAG, "Intermediate Station " + i + " Longitude: " + longitude);
-                Log.d(TAG, "Intermediate Station " + i + " Name: " + name);
-                Intermediatelongitude=longitude;
-                Intermediatelatitude=latitude;
-                Point intermediateLocation = Point.fromLngLat(longitude, latitude);
-
-                // Add a marker at the source location
-                AddMarker(intermediateLocation);
-                // Add coordinates to the lists
-                intermediateLongitudesList.add(longitude);
-                intermediateLatitudesList.add(latitude);
+        // Extract stations information
+        List<Map<String, Object>> stations = (List<Map<String, Object>>) data.get("Stations");
+        if (stations != null && !stations.isEmpty()) {
+            int n = stations.size();
+            Map<String, Object> station = stations.get(0);
+            int i;
+            for (i = 0; i < n; i++) {
+                station = stations.get(i);
+                double latitude = Double.parseDouble((String) station.get("latitude"));
+                double longitude = Double.parseDouble((String) station.get("longitude"));
+                String placeName = (String) station.get("placeName");
+                Log.d(TAG, "Place Name: " + placeName);
+                Log.d(TAG, "Latitude: " + latitude);
+                Log.d(TAG, "Longitude: " + longitude);
+                Point addpoint = Point.fromLngLat(longitude, latitude);
+                if (i == 0 || i == n - 1) {
+                    sourcepoint(addpoint);
+                } else {
+                    AddMarker(addpoint);
+                }
             }
         }
-
-        // Print sourceCoordinates
-        Log.d(TAG, "Source Latitude: " + sourceLatitude);
-        Log.d(TAG, "Source Longitude: " + sourceLongitude);
-        Point sourceLocation = Point.fromLngLat(sourceLongitude, sourceLatitude);
-
-        // Add a marker at the source location
-        soucepoint(sourceLocation);
-        // Print destinationCoordinates
-        Log.d(TAG, "Destination Latitude: " + destLatitude);
-        Log.d(TAG, "Destination Longitude: " + destLongitude);
-
-        setupRealTimeLocation(driverNumber);
-
-
-
-        String geoJson = GeoJsonGenerator.generateGeoJson(sourceLongitude, sourceLatitude,
-                destLongitude, destLatitude, intermediateLongitudesList, intermediateLatitudesList);
-
-
-
-        // Log GeoJSON (for debugging)
-        Log.d(TAG, "Generated GeoJSON: " + geoJson);
     }
-
+    private void AddMarker(Point point) {
+        AnnotationPlugin annotationApi = AnnotationPluginImplKt.getAnnotations(mapView);
+        CircleAnnotationManager circleAnnotationManager = CircleAnnotationManagerKt.createCircleAnnotationManager(annotationApi, new AnnotationConfig());
+        CircleAnnotationOptions circleAnnotationOptions = new CircleAnnotationOptions()
+                .withPoint(point)
+                .withCircleRadius(7.0)
+                .withCircleColor("#ee4e8b")
+                .withCircleStrokeWidth(1.0)
+                .withDraggable(false)
+                .withCircleStrokeColor("#ffffff");
+        circleAnnotationManager.create(circleAnnotationOptions);
+    }
+    private void sourcepoint(Point point)
+    {
+        Bitmap myLogo = ((BitmapDrawable)getResources().getDrawable(R.drawable.destination)).getBitmap();
+        AnnotationPlugin annotationApi = AnnotationPluginImplKt.getAnnotations(mapView);
+        PointAnnotationManager pointAnnotationManager= PointAnnotationManagerKt.createPointAnnotationManager(annotationApi,new AnnotationConfig());
+        PointAnnotationOptions pointAnnotationOptions = new PointAnnotationOptions()
+                .withPoint(point)
+                .withIconImage(myLogo)
+                .withIconSize(1)
+                .withDraggable(false);
+        pointAnnotationManager.create(pointAnnotationOptions);
+    }
     private void setupRealTimeLocation(String driverNumber) {
         DatabaseReference locationsRef = FirebaseDatabase.getInstance().getReference("locations");
 
@@ -357,7 +318,6 @@ public class tracking extends AppCompatActivity {
         locationsRef.child(driverNumber).addValueEventListener(locationUpdateListener);
     }
 
-
     private void processLocationUpdate(Map<String, Object> data) {
         String deviceDate = (String) data.get("deviceDate");
         String deviceTime = (String) data.get("deviceTime");
@@ -376,54 +336,6 @@ public class tracking extends AppCompatActivity {
         Log.d(TAG, "Latitude: " + latitude);
         Log.d(TAG, "Longitude: " + longitude);
     }
-
-
-    private void AddMarker(Point point)
-    {
-        AnnotationPlugin annotationApi = AnnotationPluginImplKt.getAnnotations(mapView);
-        CircleAnnotationManager circleAnnotationManager = CircleAnnotationManagerKt.createCircleAnnotationManager(annotationApi, new AnnotationConfig());
-
-        CircleAnnotationOptions circleAnnotationOptions = new CircleAnnotationOptions()
-                .withPoint(point)
-                .withCircleRadius(7.0)
-                .withCircleColor("#ee4e8b")
-                .withCircleStrokeWidth(1.0)
-                .withDraggable(false)
-                .withCircleStrokeColor("#ffffff");
-
-        circleAnnotationManager.create(circleAnnotationOptions);
-
-    }
-    private void soucepoint(Point point)
-    {
-        Bitmap myLogo = ((BitmapDrawable)getResources().getDrawable(R.drawable.source)).getBitmap();
-        AnnotationPlugin annotationApi = AnnotationPluginImplKt.getAnnotations(mapView);
-        PointAnnotationManager pointAnnotationManager= PointAnnotationManagerKt.createPointAnnotationManager(annotationApi,new AnnotationConfig());
-        PointAnnotationOptions pointAnnotationOptions = new PointAnnotationOptions()
-                .withPoint(point)
-                .withIconImage(myLogo)
-                .withIconSize(1)
-                .withDraggable(false);
-
-        pointAnnotationManager.create(pointAnnotationOptions);
-
-    }
-
-    private void destinationpoint(Point point)
-    {
-        Bitmap myLogo = ((BitmapDrawable)getResources().getDrawable(R.drawable.destination)).getBitmap();
-        AnnotationPlugin annotationApi = AnnotationPluginImplKt.getAnnotations(mapView);
-        PointAnnotationManager pointAnnotationManager= PointAnnotationManagerKt.createPointAnnotationManager(annotationApi,new AnnotationConfig());
-        PointAnnotationOptions pointAnnotationOptions = new PointAnnotationOptions()
-                .withPoint(point)
-                .withIconImage(myLogo)
-                .withIconSize(1)
-                .withDraggable(false);
-
-        pointAnnotationManager.create(pointAnnotationOptions);
-
-    }
-
     private void realMarker(Point point) {
         Bitmap myLogo = ((BitmapDrawable)getResources().getDrawable(R.drawable.buslivelocation)).getBitmap();
         AnnotationPlugin annotationApi = AnnotationPluginImplKt.getAnnotations(mapView);
@@ -450,8 +362,8 @@ public class tracking extends AppCompatActivity {
     }
 
 
+
+
 }
-
-
 
 
